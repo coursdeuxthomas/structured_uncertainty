@@ -53,9 +53,9 @@ def sample_correlated_noise(Sigma):
     """
     Select epsilon ~ N(0, Sigma).
     """
-    mean = np.zeros(Sigma.shape[0], dtype=np.float32)
-    eps = np.random.multivariate_normal(mean, Sigma)
-
+    z = np.random.randn(Sigma.shape[0]).astype(np.float32)
+    L = np.linalg.cholesky(Sigma)
+    eps = L @ z
     return eps.astype(np.float32)
 
 
@@ -91,28 +91,40 @@ class SplineDataset(Dataset):
             length_scale=length_scale,
         )
 
+        mus = []
+        xs = []
+        sigmas = []
+
+        for _ in range(num_samples):
+            mu = generate_spline(
+                num_points=self.num_points,
+                num_knots=self.num_knots,
+            )
+
+            Sigma_true = generate_covariance_from_mu(
+                mu=mu,
+                proto_cov=self.proto_cov,
+            )
+
+            eps = sample_correlated_noise(Sigma_true)
+            x = mu + eps
+
+            mus.append(mu)
+            xs.append(x.astype(np.float32))
+            sigmas.append(Sigma_true)
+
+        self.mus = torch.from_numpy(np.stack(mus).astype(np.float32))
+        self.xs = torch.from_numpy(np.stack(xs).astype(np.float32))
+        self.sigmas = torch.from_numpy(np.stack(sigmas).astype(np.float32))
+
     def __len__(self):
         return self.num_samples
 
     def __getitem__(self, idx):
-        mu = generate_spline(
-            num_points=self.num_points,
-            num_knots=self.num_knots,
-        )
-
-        Sigma_true = generate_covariance_from_mu(
-            mu=mu,
-            proto_cov=self.proto_cov,
-        )
-
-        eps = sample_correlated_noise(Sigma_true)
-
-        x = mu + eps
-
         return {
-            "mu": torch.from_numpy(mu),
-            "x": torch.from_numpy(x.astype(np.float32)),
-            "Sigma_true": torch.from_numpy(Sigma_true),
+            "mu": self.mus[idx],
+            "x": self.xs[idx],
+            "Sigma_true": self.sigmas[idx],
         }
 
 
