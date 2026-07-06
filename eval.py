@@ -50,13 +50,14 @@ def sample_from_precision_cholesky(L):
 
     u = torch.randn(batch_size, n, 1, device=device, dtype=dtype)
 
+    # On resout A x = b avec A = L^T, x = epsilon et b = u
     epsilon = torch.linalg.solve_triangular(
         L.transpose(1, 2),
         u,
         upper=True,
     )
 
-    return epsilon.squeeze(-1)
+    return epsilon.squeeze(-1) #[batch_size, n, 1] avant
 
 
 def plot_signal(mu, x_true, x_sample, figure_path):

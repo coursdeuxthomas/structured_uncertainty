@@ -1,5 +1,6 @@
 import json
 import torch
+import matplotlib.pyplot as plt
 
 from loss import structured_gaussian_nll
 
@@ -84,6 +85,23 @@ def save_checkpoint(model, optimizer, epoch, train_loss, val_loss, checkpoint_pa
 
     torch.save(checkpoint, checkpoint_path)
 
+def plot_training_history(history, run_dir):
+    """
+    Plot the training and validation loss history.
+    """
+    plt.figure(figsize=(8, 6))
+    plt.plot(history["train_loss"], label="Train Loss")
+    plt.plot(history["val_loss"], label="Validation Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Training History")
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(run_dir / "training_history.png")
+    plt.close()
+
+
 
 def fit(model, train_loader, val_loader, optimizer, config, device, run_dir):
     """
@@ -152,5 +170,9 @@ def fit(model, train_loader, val_loader, optimizer, config, device, run_dir):
         val_loss=val_loss,
         checkpoint_path=checkpoint_dir / "last_model.pth",
     )
+
+    figure_dir = run_dir / "figures"
+
+    plot_training_history(history, figure_dir)
 
     return history

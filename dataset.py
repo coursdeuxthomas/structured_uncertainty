@@ -41,7 +41,7 @@ def generate_covariance_from_mu(mu, proto_cov, min_scale=0.05):
     """
     scale = np.abs(mu) + min_scale
 
-    Sigma = proto_cov * np.outer(scale, scale)
+    Sigma = proto_cov * np.outer(scale, scale) # scale_i * scale_j, si scale_i et scale_j sont grands, cov grande
 
     # petit jitter pour stabilité numérique
     Sigma += 1e-4 * np.eye(len(mu), dtype=np.float32)

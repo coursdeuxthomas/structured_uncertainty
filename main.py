@@ -176,7 +176,7 @@ def main():
     print(f"[ARGS] checkpoint = {args.checkpoint}")
 
     config = {
-        "seed": 0,
+        "seed": 1,
         "num_points": 50,
         "num_knots": 5,
         "length_scale": 4.0,
@@ -191,7 +191,7 @@ def main():
         "grad_clip": 5.0,
 
         "hidden_dim": 50,
-        "use_batch_norm": False,
+        "use_batch_norm": True,
     }
 
     print("\n[CONFIG] Experiment configuration:")
