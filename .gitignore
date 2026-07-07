@@ -9,6 +9,8 @@ data/
 *.pth
 *.pt
 *.ckpt
+*.txt
+*.md
 
 .env
 venv/

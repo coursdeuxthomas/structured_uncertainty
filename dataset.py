@@ -68,6 +68,12 @@ class SplineDataset(Dataset):
 
     During training, onlu use of mu and x
     sigma_true used for eval
+
+    resample_noise :
+        False -> x is fixed once at construction (val / test)
+        True  -> a fresh eps is drawn at every __getitem__ (train),
+                 using the precomputed Cholesky factor of Sigma_true,
+                 so the model never sees the same noise twice.
     """
 
     def __init__(
@@ -77,11 +83,13 @@ class SplineDataset(Dataset):
         num_knots=5,
         length_scale=4.0,
         seed=None,
+        resample_noise=False,
     ):
         self.num_samples = num_samples
         self.num_points = num_points
         self.num_knots = num_knots
         self.length_scale = length_scale
+        self.resample_noise = resample_noise
 
         if seed is not None:
             np.random.seed(seed)
@@ -94,6 +102,7 @@ class SplineDataset(Dataset):
         mus = []
         xs = []
         sigmas = []
+        chols = []
 
         for _ in range(num_samples):
             mu = generate_spline(
@@ -106,24 +115,38 @@ class SplineDataset(Dataset):
                 proto_cov=self.proto_cov,
             )
 
-            eps = sample_correlated_noise(Sigma_true)
+            # Cholesky computed once here, reused at every __getitem__
+            # when resample_noise=True (only a matvec L @ z per draw)
+            L = np.linalg.cholesky(Sigma_true).astype(np.float32)
+
+            z = np.random.randn(self.num_points).astype(np.float32)
+            eps = L @ z
             x = mu + eps
 
             mus.append(mu)
             xs.append(x.astype(np.float32))
             sigmas.append(Sigma_true)
+            chols.append(L)
 
         self.mus = torch.from_numpy(np.stack(mus).astype(np.float32))
         self.xs = torch.from_numpy(np.stack(xs).astype(np.float32))
         self.sigmas = torch.from_numpy(np.stack(sigmas).astype(np.float32))
+        self.chols = torch.from_numpy(np.stack(chols).astype(np.float32))
 
     def __len__(self):
         return self.num_samples
 
     def __getitem__(self, idx):
+        if self.resample_noise:
+            z = torch.randn(self.num_points)
+            eps = self.chols[idx] @ z
+            x = self.mus[idx] + eps
+        else:
+            x = self.xs[idx]
+
         return {
             "mu": self.mus[idx],
-            "x": self.xs[idx],
+            "x": x,
             "Sigma_true": self.sigmas[idx],
         }
 

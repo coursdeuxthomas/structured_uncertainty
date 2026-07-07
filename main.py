@@ -61,6 +61,7 @@ def build_dataloaders(config):
         num_knots=config["num_knots"],
         length_scale=config["length_scale"],
         seed=config["seed"],
+        resample_noise=config["resample_noise"],
     )
 
     val_dataset = SplineDataset(
@@ -176,18 +177,19 @@ def main():
     print(f"[ARGS] checkpoint = {args.checkpoint}")
 
     config = {
-        "seed": 1,
+        "seed": 30,
         "num_points": 50,
         "num_knots": 5,
         "length_scale": 4.0,
+        "resample_noise": True,
 
-        "train_samples": 10000,
-        "val_samples": 500,
-        "test_samples": 500,
+        "train_samples": 15000,
+        "val_samples": 1000,
+        "test_samples": 1000,
 
         "batch_size": 64,
-        "num_epochs": 50,
-        "learning_rate": 1e-4,
+        "num_epochs": 150,
+        "learning_rate": 1e-3,
         "grad_clip": 5.0,
 
         "hidden_dim": 50,
