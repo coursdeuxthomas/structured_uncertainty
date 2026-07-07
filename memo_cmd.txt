@@ -1,2 +1,0 @@
--Lancer le mode eval
-python main.py --mode eval --checkpoint results/spline_2026-07-02_12-30-00/checkpoints/best_model.pth
